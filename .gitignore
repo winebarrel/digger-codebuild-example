@@ -1,0 +1,6 @@
+.terraform/
+*.tfplan
+
+# 初回の bootstrap で backend ブロックを外したときに残るローカルの state
+terraform.tfstate
+terraform.tfstate.backup
