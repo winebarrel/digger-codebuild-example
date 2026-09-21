@@ -3,8 +3,11 @@ projects:
     dir: postgresql
     opentofu: true
 
-# apply が成功したら PR を自動でマージする
+# apply が成功したら PR を自動でマージする。
+# デフォルトの squash だとコミットが main の祖先にならず、手元の
+# ブランチが git branch -d で消せなくなるのでマージコミットにする。
 auto_merge: true
+auto_merge_strategy: merge
 
 # 同じプロジェクトを複数の PR から同時に触らせない。
 # backendless では DynamoDB の DiggerDynamoDBLockTable に記録される。

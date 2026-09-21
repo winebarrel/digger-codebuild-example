@@ -43,5 +43,5 @@ resource "postgresql_grant" "app_rw_tables" {
   role        = postgresql_role.app_rw.name
   schema      = postgresql_schema.app.name
   object_type = "table"
-  privileges  = ["SELECT", "INSERT", "UPDATE", "DELETE"]
+  privileges  = ["SELECT", "INSERT", "UPDATE", "DELETE", "TRUNCATE"]
 }

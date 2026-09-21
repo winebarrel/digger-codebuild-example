@@ -31,7 +31,7 @@ resource "postgresql_default_privileges" "app_rw_tables" {
   role        = postgresql_role.app_rw.name
   owner       = "postgres"
   object_type = "table"
-  privileges  = ["SELECT", "INSERT", "UPDATE", "DELETE"]
+  privileges  = ["SELECT", "INSERT", "UPDATE", "DELETE", "TRUNCATE"]
 }
 
 # serial 列が nextval を呼べるように USAGE も渡す
