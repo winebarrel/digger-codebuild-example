@@ -14,8 +14,7 @@ resource "postgresql_grant" "app_ro_schema" {
 }
 
 # objects を空にすると、そのスキーマの既存のテーブル全部が対象になる。
-# 今後作られるテーブルには効かないので、それを賄うには
-# postgresql_default_privileges が必要。
+# 今後作られるテーブルには効かない。それは default_privileges.tf で賄う。
 resource "postgresql_grant" "app_ro_tables" {
   database    = postgresql_database.app.name
   role        = postgresql_role.app_ro.name
