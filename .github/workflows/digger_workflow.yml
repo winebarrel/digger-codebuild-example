@@ -1,0 +1,81 @@
+name: Digger Workflow
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize]
+  issue_comment:
+    types: [created]
+
+# backendless は並列実行できないので直列に流す
+concurrency:
+  group: digger
+
+jobs:
+  digger:
+    # digger 宛でないコメントでジョブを起動しない
+    if: |
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'issue_comment' && startsWith(github.event.comment.body, 'digger'))
+
+    # CodeBuild がホストする GitHub Actions ランナー。
+    # codebuild- の後ろは CodeBuild プロジェクト名で、一致しないと
+    # ジョブが失敗せずに永久にランナーを待つ。
+    runs-on: codebuild-digger-runner-${{ github.run_id }}-${{ github.run_attempt }}
+
+    timeout-minutes: 15
+    permissions:
+      contents: write      # auto_merge に必要
+      pull-requests: write # PR コメントの投稿に必要
+      issues: write        # PR 番号の判定と、コメントへのリアクションに必要
+      statuses: write      # apply_requirements の mergeable 判定に必要
+
+    env:
+      # S3 の state と tfplan 用。CodeBuild が設定するはずだが明示しておく。
+      AWS_REGION: ap-northeast-1
+
+    steps:
+      # コメントを受け取ったことを示す。backendless ではリアクションが
+      # 付かない (digger が呼ぶのは orchestrator 経路だけ) ので自分でやる。
+      - name: Acknowledge the comment
+        if: github.event_name == 'issue_comment'
+        run: |
+          gh api --method POST \
+            "repos/${GH_REPO}/issues/comments/${COMMENT_ID}/reactions" \
+            -f content=eyes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          COMMENT_ID: ${{ github.event.comment.id }}
+
+      # apply はコメントから起動するので、どのジョブが動いているのか
+      # PR から辿れるようにリンクを投稿する。
+      - name: Post the job link
+        if: |
+          github.event_name == 'issue_comment' &&
+          startsWith(github.event.comment.body, 'digger apply')
+        run: |
+          gh pr comment "$PR_NUMBER" --body "apply を開始しました: $RUN_URL"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+      # checkout は digger 側でやる。issue_comment のときは
+      # refs/pull/<PR番号>/merge を取ってくれる。
+      #
+      # setup-aws は書かない。ジョブは CodeBuild のサービスロールを
+      # assumed した状態で動くので、OIDC も assume role も要らない。
+      - uses: diggerhq/digger@v0.6.151
+        with:
+          no-backend: true
+          setup-opentofu: true
+          opentofu-version: 1.12.6
+          # plan ファイルを S3 に置く。これを設定しないと apply 時に
+          # plan を取り直すので、レビューした内容と違うものが適用されうる。
+          upload-plan-destination: aws
+          upload-plan-destination-s3-bucket: winebarrel-digger-example
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
