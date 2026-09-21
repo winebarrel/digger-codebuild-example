@@ -99,8 +99,6 @@ plan ファイルの保存は必須。設定しないと apply が plan を取�
 
 ## 土台
 
-`aws/` は変数を持たない。値は直接書き換える。
-
 | ファイル | 内容 |
 | --- | --- |
 | `tofu.tf` | backend、provider。リージョンは `ap-northeast-1` |
@@ -122,8 +120,6 @@ plan ファイルの保存は必須。設定しないと apply が plan を取�
 
 ### 立ち上げ
 
-state を置くバケットは既にあるので、いきなりこの backend で init できる。
-
 ```sh
 cd aws
 tofu init
@@ -132,12 +128,7 @@ tofu apply -target aws_codeconnections_connection.github
 
 [Developer Tools > Settings > Connections](https://ap-northeast-1.console.aws.amazon.com/codesuite/settings/connections?region=ap-northeast-1)
 で接続を選び **Update pending connection**。AWS Connector for GitHub を認可し、
-入れるアカウントと見せるリポジトリを選ぶ。
-
-個人アカウントより organization に入れたほうがよい。接続がクリックした人ではなく
-installation に依存するようになる。installation token の接続である点がここでは
-効いてくる。user token の接続は2つの build が同時にトークンを更新すると自分の
-トークンを無効化するが、このランナーはジョブごとに build を1つ起動する。
+入れるアカウントとリポジトリを選ぶ。
 
 ```sh
 tofu output connection_status   # AVAILABLE になること
