@@ -1,5 +1,7 @@
 # digger on CodeBuild
 
+[![Digger Workflow](https://github.com/winebarrel/digger-codebuild-example/actions/workflows/digger_workflow.yml/badge.svg)](https://github.com/winebarrel/digger-codebuild-example/actions/workflows/digger_workflow.yml)
+
 [digger](https://github.com/diggerhq/digger) (2025-11-07 に OpenTaco へリブランド) を
 backendless モードで動かす例。ジョブは GitHub がホストするランナーではなく
 [CodeBuild がホストする GitHub Actions ランナー](https://docs.aws.amazon.com/codebuild/latest/userguide/action-runner.html)
