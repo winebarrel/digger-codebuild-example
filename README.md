@@ -36,9 +36,9 @@ apply は人間が `digger apply` とコメントして起動する。RDS は
 apply が成功すると `auto_merge: true` で PR がマージされる。
 
 `ack` ジョブだけ `ubuntu-latest` で動く。リアクションと開始投稿は `gh` の
-API 呼び出しだけで VPC も RDS も要らないのに、CodeBuild ランナーだと build の
-プロビジョニングを待つことになり、すぐ知らせるという目的に反するため。
-ラベルが CodeBuild プロジェクト名と一致しないジョブは webhook が処理されない
+API 呼び出しだけで済み、VPC も RDS も要らない。CodeBuild ランナーだと build の
+プロビジョニングを待つことになり、すぐ知らせるという目的に反する。
+ラベルが CodeBuild プロジェクト名と一致しないジョブは webhook で処理されない
 ので、このジョブで余計な build は起きない。
 
 `concurrency` は `digger` ジョブに掛けている。ワークフロー全体に掛けると、
@@ -47,19 +47,19 @@ API 呼び出しだけで VPC も RDS も要らないのに、CodeBuild ラン�
 ## ランナー
 
 キューに入ったワークフロージョブが `WORKFLOW_JOB_QUEUED` の webhook を発火し、
-CodeBuild がそれ1つにつき build を1つ起動して、その build が ephemeral runner
-として自分を登録する。ジョブはラベルで拾う。
+CodeBuild が webhook 1つにつき build を1つ起動して、その build が ephemeral runner
+として自分を登録する。ランナーはジョブをラベルで拾う。
 
 ```yaml
 runs-on: codebuild-digger-runner-${{ github.run_id }}-${{ github.run_attempt }}
 ```
 
-`codebuild-` の後ろは CodeBuild プロジェクト名で、完全に一致する必要がある。
+`codebuild-` の後ろは CodeBuild プロジェクト名で、完全に一致させる必要がある。
 一致しないとジョブは失敗せずに永久にランナーを待つ。
 
-ジョブは CodeBuild のサービスロールを assumed した状態で動く。OIDC も
+ジョブは CodeBuild のサービスロールを assume した状態で動く。OIDC も
 `aws-actions/configure-aws-credentials` も要らないので、ワークフローに
-`setup-aws` を書いていない。裏返しとして、ワークフローが動かすものは
+`setup-aws` を書いていない。裏を返せば、ワークフローが動かすものは
 全部そのロールの権限を持つ。
 
 ## provider の接続設定
@@ -110,9 +110,9 @@ plan ファイルの保存は必須。設定しないと apply が plan を取�
 | `rds.tf` | PostgreSQL、サブネットグループ、SG |
 | `outputs.tf` | `runs-on` のラベル、接続ステータスなど |
 
-2つ意図的に管理外にしている。
+意図的に管理外にしているものが2つある。
 
-- **NAT ゲートウェイ**。プライベートサブネットが向けている先で、手で作った。
+- **NAT ゲートウェイ**。プライベートサブネットのルートが向いている先で、手で作った。
   CodeBuild を VPC に置くと GitHub 向けの通信も VPC を通るので、NAT が
   生きていないとランナーが登録できない。
 - **GitHub App の認可**。`aws_codeconnections_connection` は `PENDING` で
@@ -127,8 +127,8 @@ tofu apply -target aws_codeconnections_connection.github
 ```
 
 [Developer Tools > Settings > Connections](https://ap-northeast-1.console.aws.amazon.com/codesuite/settings/connections?region=ap-northeast-1)
-で接続を選び **Update pending connection**。AWS Connector for GitHub を認可し、
-入れるアカウントとリポジトリを選ぶ。
+で接続を選び **Update pending connection** を押す。AWS Connector for GitHub を認可し、
+アクセスを許可するアカウントとリポジトリを選ぶ。
 
 ```sh
 tofu output connection_status   # AVAILABLE になること
